@@ -102,7 +102,7 @@ package org.openvv {
          * Hold OVV version. Will past to JavaScript as well $ovv.version
          */
 
-        public static const RELEASE_VERSION: String = "1.2.1";
+        public static const RELEASE_VERSION: String = "1.2.2";
 
 
         ////////////////////////////////////////////////////////////
@@ -219,17 +219,23 @@ package org.openvv {
          * callbacks, starts the RenderMeter and sets up ThrottleEvent
          * listeners, and initializes the JavaScript portion of OpenVV.
          *
-         * @param beaconSwfUrl The fully qualified URL of OVVBeacon.swf for
-         * OpenVV to use. For example, "http://localhost/OVVBeacon.swf". If
-         * not supplied, the "beacon" method for detecting viewability will
+         * @param conf is config object:  
+		 * 		{ 
+		 * 			beaconSwfUrl: 
+		 *   		vpaidAd: 
+		 * 		}
+		 * beaconSwfUrl - The fully qualified URL of OVVBeacon.swf for 
+		 * OpenVV to use. this For example, "http://localhost/OVVBeacon.swf".
+		 * If not supplied, the "beacon" method for detecting viewability will
          * be unavailable.
+		 * vpaidAd - reference to the vpaid object.
          * @param id The unique identifier of this OVVAsset. If not supplied,
          * it will be randomly generated.
          * @param adRef A reference to the top DisplayObject of the ad; used
          * to determine full-screen status when player's stage is not available.
          * Optional only for backwards compatibility.
          */
-        public function OVVAsset( beaconSwfUrl:String = null, id:String = null, adRef:* = null ) {
+        public function OVVAsset(conf:Object = null, id:String = null, adRef:* = null ) {
             if (!externalInterfaceIsAvailable()) {
                 dispatchEvent(new OVVEvent(OVVEvent.OVVError, {
                     "message": "ExternalInterface unavailable"
@@ -239,13 +245,21 @@ package org.openvv {
 
             _id = (id !== null) ? id : "ovv" + Math.floor(Math.random() * 1000000000).toString();
 
-            ////////  ????  ///////////////
             if ( !!adRef ) {
                 _ad = adRef as DisplayObject;
             }
             setStage();
-            ////////  ????  ///////////////
-
+			
+			var beaconSwfUrl:String = "";
+			if (conf is String) 
+			{				
+				beaconSwfUrl = String(conf); //  backward-compatible  - legacy API 
+			} else {
+				// config object
+				beaconSwfUrl = conf.beaconSwfUrl;
+				_vpaidAd = conf.vpaidAd;
+			}
+            
             ExternalInterface.addCallback(_id, flashProbe);
             ExternalInterface.addCallback("onJsReady" + _id, onJsReady);
 
@@ -298,7 +312,7 @@ package org.openvv {
 		registerEventHandler(vpaidEventsDispatcher);
 		_vpaidEventsDispatcher = vpaidEventsDispatcher;
 
-        if ((Object)(vpaidEventsDispatcher).hasOwnProperty('getVPAID') && vpaidEventsDispatcher['getVPAID']  is Function) {
+        if (_vpaidAd == null && (Object)(vpaidEventsDispatcher).hasOwnProperty('getVPAID') && vpaidEventsDispatcher['getVPAID']  is Function) {
             _vpaidAd = (Object)(_vpaidEventsDispatcher).getVPAID();
         }
 	}
