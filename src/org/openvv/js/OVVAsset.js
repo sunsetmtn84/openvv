@@ -130,6 +130,13 @@ function OVV() {
     */
     var subscribers = [];
 
+    /**
+    * An object that holds all the new width and height of the video player
+    * @type {Object}
+    */
+    //custom dimensions
+    window.newPlayerDimensions = {};
+
     ///////////////////////////////////////////////////////////////////////////
     // PUBLIC FUNCTIONS
     ///////////////////////////////////////////////////////////////////////////
@@ -597,12 +604,12 @@ function OVVBrowser(userAgent)
 
     /**
     * browser:
-    *	{
-    *		ID: ,
-    *	  	name: '',
-    *	  	version: '',
-    *	    os: ''
-    *	};
+    *   {
+    *       ID: ,
+    *       name: '',
+    *       version: '',
+    *       os: ''
+    *   };
      */
     var  browser = getBrowserDetailsByUserAgent(userAgent);
 
@@ -1394,8 +1401,8 @@ function OVVAsset(uid, dependencies) {
         // save for next time
         lastPlayerLocation = playerLocation;
 
-        var playerWidth = playerLocation.right - playerLocation.left;
-        var playerHeight = playerLocation.bottom - playerLocation.top;
+        var playerWidth = window.newPlayerDimensions.width || (playerLocation.right - playerLocation.left);
+        var playerHeight = window.newPlayerDimensions.height || (playerLocation.bottom - playerLocation.top);
 
         var innerWidth = playerWidth / (1 + SQRT_2);
         var innerHeight = playerHeight / (1 + SQRT_2);
@@ -1555,7 +1562,7 @@ function OVVAsset(uid, dependencies) {
         var embeds = document.getElementsByTagName('embed');
 
         for (var i = 0; i < embeds.length; i++) {
-            if (embeds[i][id]) {
+            if (embeds[i][id] || embeds[i].id) {
                 return embeds[i];
             }
         }
@@ -1563,7 +1570,14 @@ function OVVAsset(uid, dependencies) {
         var objs = document.getElementsByTagName('object');
 
         for (var i = 0; i < objs.length; i++) {
-            if (objs[i][id]) {
+
+            if ((objs[i][id] || objs[i].id || objs[i].name) && (objs[i].width > 300) && (objs[i].height > 250) && (objs[i].getClientRects()[0].width > 300) && (objs[i].getClientRects()[0].height > 250)) {
+                //check if this is running in studio and the wxh are acceptable
+                if(objs[i][id] ==  "tmplayerSWF" || objs[i].id ==  "tmplayerSWF"){
+                    window.newPlayerDimensions = {width: objs[i].width, height: objs[i].height}
+                    return objs[i];
+                }
+                //otherwise go on as normal
                 return objs[i];
             }
         }
